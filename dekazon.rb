@@ -23,13 +23,17 @@ def library_search_url_for_title(title)
   url
 end
 
-# Loads +url+ and returns the search result count.
-def library_search_result_count(url)
-  search_doc = Nokogiri::HTML(open(url))
+# Returns the result count of +doc+.
+def library_search_result_count(doc)
   # This corresponds to the 7 in
-  #    &nbsp;<b>7</b>&nbsp;titles matched:&nbsp;
-  el = search_doc.css('a.mediumBoldAnchor').first
+  #    <a class="normalBlackFont2"><b>7</b> titles matched:...</a>
+  el = doc.css('a.normalBlackFont2 b').first
   count = el ? el.content.to_i : 0
+end
+
+# Returns an array of the titles found.
+def library_search_result_titles(doc)
+  results = doc.css('a.mediumBoldAnchor').map { |el| el.content }
 end
 
 puts "Searching library for #{titles.size} titles..."
@@ -39,7 +43,8 @@ STDOUT.sync = true
 i = 0
 results = titles.map do |title|
   url = library_search_url_for_title title
-  count = library_search_result_count url
+  doc = Nokogiri::HTML(open(url))
+  count = library_search_result_count doc
 
   i += 1
   msg = (count > 0) ? "\n#{title}: #{count} found\n" : "#{i}."
